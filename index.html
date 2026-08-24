@@ -7,11 +7,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 flex justify-center items-center">
-  <div class="max-w-md w-full bg-white rounded-2xl shadow-lg p-6">
+  <div class="max-w-xl w-full bg-white rounded-2xl shadow-lg p-6">
     <h1 class="text-2xl font-bold text-blue-900 mb-1">🎓 育林國中夢想導航員</h1>
-    <p class="text-gray-500 mb-6 text-sm">選擇模擬考/會考等級，獲取基北區落點與樹林通勤建議。</p>
+    <p class="text-gray-500 mb-4 text-sm">選擇模擬考/會考等級，獲取基北區落點與樹林通勤建議。</p>
 
-    <div class="grid grid-cols-2 gap-3 mb-6">
+    <!-- 分數選擇區 -->
+    <div id="scoreForm" class="grid grid-cols-2 gap-3 mb-4">
       <div>
         <label class="block text-xs font-bold text-gray-700 mb-1">國文</label>
         <select id="chi" class="w-full border p-2 rounded-lg bg-gray-50 text-sm"><option>A++</option><option>A+</option><option>A</option><option selected>B++</option><option>B+</option><option>B</option><option>C</option></select>
@@ -38,44 +39,83 @@
       </div>
     </div>
 
-    <button onclick="startAnalyze()" id="btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow">開始落點分析</button>
+    <button onclick="firstAnalyze()" id="startBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow mb-4">開始落點分析</button>
 
-    <div id="result" class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 text-sm leading-relaxed whitespace-pre-line hidden"></div>
+    <!-- 對話歷史紀錄區 -->
+    <div id="chatHistory" class="space-y-4 max-h-96 overflow-y-auto mb-4 hidden p-2 border-t"></div>
+
+    <!-- 追問輸入區 -->
+    <div id="followUpArea" class="flex gap-2 hidden">
+      <input type="text" id="userInput" placeholder="繼續追問，例如：想去板橋高中要怎麼準備？" class="flex-1 border border-gray-300 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <button onclick="sendFollowUp()" id="sendBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 rounded-xl text-sm transition">發送</button>
+    </div>
   </div>
 
   <script>
-    async function startAnalyze() {
-      const btn = document.getElementById('btn');
-      const result = document.getElementById('result');
-      
-      btn.disabled = true;
-      btn.innerText = '正在計算落點與通勤時間...';
-      result.classList.add('hidden');
+    let conversation = [];
 
-      const scores = {
-        chi: document.getElementById('chi').value,
-        eng: document.getElementById('eng').value,
-        math: document.getElementById('math').value,
-        sci: document.getElementById('sci').value,
-        soc: document.getElementById('soc').value,
-        write: document.getElementById('write').value
-      };
+    async function firstAnalyze() {
+      const startBtn = document.getElementById('startBtn');
+      startBtn.disabled = true;
+      startBtn.innerText = '正在計算落點與通勤時間...';
+
+      const promptText = `育林國中學生成績：國文${document.getElementById('chi').value}、英文${document.getElementById('eng').value}、數學${document.getElementById('math').value}、自然${document.getElementById('sci').value}、社會${document.getElementById('soc').value}、作文${document.getElementById('write').value}。請進行分析。`;
+      
+      conversation.push({ role: 'user', text: promptText });
+      await callAPI();
+
+      document.getElementById('scoreForm').classList.add('hidden');
+      startBtn.classList.add('hidden');
+      document.getElementById('followUpArea').classList.remove('hidden');
+    }
+
+    async function sendFollowUp() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+      appendMessage('user', text);
+      conversation.push({ role: 'user', text: text });
+
+      const sendBtn = document.getElementById('sendBtn');
+      sendBtn.disabled = true;
+      sendBtn.innerText = '思考中...';
+
+      await callAPI();
+      sendBtn.disabled = false;
+      sendBtn.innerText = '發送';
+    }
+
+    async function callAPI() {
+      const chatHistoryDiv = document.getElementById('chatHistory');
+      chatHistoryDiv.classList.remove('hidden');
 
       try {
         const response = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scores })
+          body: JSON.stringify({ messages: conversation })
         });
         const data = await response.json();
-        result.innerText = data.result || data.error;
-        result.classList.remove('hidden');
+        const reply = data.result;
+
+        conversation.push({ role: 'model', text: reply });
+        appendMessage('model', reply);
       } catch (err) {
-        alert('連線失敗，請再試一次！');
-      } finally {
-        btn.disabled = false;
-        btn.innerText = '開始落點分析';
+        appendMessage('model', '連線異常，請稍後再試。');
       }
+    }
+
+    function appendMessage(role, text) {
+      const chatHistoryDiv = document.getElementById('chatHistory');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = role === 'user' 
+        ? 'bg-blue-50 border border-blue-200 text-blue-900 p-3 rounded-xl text-sm self-end' 
+        : 'bg-gray-50 border border-gray-200 text-gray-800 p-4 rounded-xl text-sm leading-relaxed whitespace-pre-line';
+      msgDiv.innerText = text;
+      chatHistoryDiv.appendChild(msgDiv);
+      chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
     }
   </script>
 </body>
