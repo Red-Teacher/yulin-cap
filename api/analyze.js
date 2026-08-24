@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   const { scores } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
-  if (!apiKey) return res.status(500).json({ error: '伺服器未設定 API Key' });
+  if (!apiKey) return res.status(200).json({ result: '【錯誤】Vercel 未讀取到 GEMINI_API_KEY，請檢查環境變數名稱與設定。' });
 
   const systemInstruction = `
 你是一位熟悉「基北區108免試入學方案」的資深輔導老師，專門服務新北市樹林區育林國中學生。
@@ -26,9 +26,14 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || '分析失敗，請稍後再試。';
+
+    if (data.error) {
+      return res.status(200).json({ result: `【Google API 錯誤】${data.error.message}` });
+    }
+
+    const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || '無回覆內容，請再試一次。';
     return res.status(200).json({ result: replyText });
   } catch (error) {
-    return res.status(500).json({ error: '系統連線異常' });
+    return res.status(200).json({ result: `【連線異常】${error.message}` });
   }
 }
