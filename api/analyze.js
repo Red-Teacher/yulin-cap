@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   const prompt = `育林國中學生成績：國文${scores.chi}、英文${scores.eng}、數學${scores.math}、自然${scores.sci}、社會${scores.soc}、作文${scores.write}。請進行分析。`;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
