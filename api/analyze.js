@@ -26,14 +26,15 @@ export default async function handler(req, res) {
 📊 **採計總積分**：算出的總積分（例如：20.6分）
 
 🎯 **志願落點建議**：
-* **夢想學校**：1-2所比目前分數高1-2分的學校與理由
+* **明星指標型學校**：1-2所比目前分數高1-2分的學校與理由
 * **落點學校**：1-2所分數完全符合的學校與理由
+* **在地優質學校**：1-2所分數完全符合育林國中優免的學校與理由
 * **安全學校**：1-2所比目前分數低1-2分的保底學校與理由
 
 🚆 **樹林在地通勤建議**：
 * 1-2句從樹林/南樹林火車站出發的具體通勤規劃
 
-💡 **衝刺建議**：
+💡 **準備建議**：
 * 1句最具效益的補強建議
 
 【積分規則】
@@ -61,8 +62,17 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    if (data.error) {
-      return res.status(200).json({ result: `【Google API 錯誤】${data.error.message}` });
+if (data.error) {
+      const errMsg = data.error.message.toLowerCase();
+      // 判斷是否為「每分鐘 15 次」的免費限制，或是伺服器暫時塞車
+      if (errMsg.includes('exhausted') || errMsg.includes('quota') || errMsg.includes('429')) {
+        return res.status(200).json({ result: '🚦 哇！現在有太多同學同時在使用，系統稍微塞車了。請「倒數 5 秒鐘」後再點擊一次發送喔！' });
+      }
+      if (errMsg.includes('high demand') || errMsg.includes('overloaded') || errMsg.includes('503')) {
+        return res.status(200).json({ result: '🚦 Google AI 伺服器目前全球大塞車，請稍等 10 秒鐘後再試一次！' });
+      }
+      // 其他未知錯誤
+      return res.status(200).json({ result: `【系統提示】分析暫時中斷 (${data.error.message})，請再點擊一次發送。` });
     }
 
     const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || '無回覆內容，請再試一次。';
