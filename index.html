@@ -14,9 +14,9 @@
 <body class="bg-slate-100 min-h-screen p-4 flex justify-center items-center">
   <div class="max-w-xl w-full bg-white rounded-2xl shadow-lg p-6">
     <h1 class="text-2xl font-bold text-blue-900 mb-1">🎓 夢想導航員</h1>
-    <p class="text-gray-500 mb-4 text-sm">選擇模擬考/會考等級，獲取基北區落點與樹林通勤建議。</p>
+    <p class="text-gray-500 mb-4 text-sm">選擇成績並填寫夢想校系，獲取專屬落點與通勤建議。</p>
 
-    <!-- 分數選擇區 -->
+    <!-- 分數與夢想填寫區 -->
     <div id="scoreForm" class="grid grid-cols-2 gap-3 mb-4">
       <div>
         <label class="block text-xs font-bold text-gray-700 mb-1">國文</label>
@@ -51,6 +51,12 @@
           <option>0 級分</option>
         </select>
       </div>
+      
+      <!-- 新增：夢想學校輸入框 -->
+      <div class="col-span-2 mt-1">
+        <label class="block text-xs font-bold text-gray-700 mb-1">🎯 夢想學校或科系 (選填)</label>
+        <input type="text" id="dreamInput" placeholder="例如：板橋高中、大安高工資訊科..." class="w-full border border-gray-300 p-2 rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
     </div>
 
     <button onclick="firstAnalyze()" id="startBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow mb-4">開始落點分析</button>
@@ -73,7 +79,11 @@
       startBtn.disabled = true;
       startBtn.innerText = '正在計算落點與通勤時間...';
 
-      const promptText = `育林國中學生成績：國文${document.getElementById('chi').value}、英文${document.getElementById('eng').value}、數學${document.getElementById('math').value}、自然${document.getElementById('sci').value}、社會${document.getElementById('soc').value}、作文${document.getElementById('write').value}。請進行分析。`;
+      // 抓取夢想學校文字
+      const dreamVal = document.getElementById('dreamInput').value.trim();
+      const dreamText = dreamVal ? `。我的夢想學校/科系是：「${dreamVal}」` : '';
+
+      const promptText = `育林國中學生成績：國文${document.getElementById('chi').value}、英文${document.getElementById('eng').value}、數學${document.getElementById('math').value}、自然${document.getElementById('sci').value}、社會${document.getElementById('soc').value}、作文${document.getElementById('write').value}${dreamText}。請進行分析。`;
       
       conversation.push({ role: 'user', text: promptText });
       await callAPI();
